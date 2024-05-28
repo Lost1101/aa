@@ -48,14 +48,26 @@
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <h2>Chatbot FAQ</h2>
-        <input type="text" id="question" class="question-input" placeholder="Ketik pertanyaan Anda di sini...">
-        <button class="ask-button" onclick="askQuestion()">Tanya</button>
+    <div id="chatbot-container">
+        <h2>Chatbot Assistant</h2>
+        <div class="chatbot-chatbox">
         <div id="chat-box" class="chat-box"></div>
+        <input type="text" id="question" class="question-input" placeholder="Ketik pertanyaan Anda di sini...">
+        <button class="ask-button" onclick="askQuestion()">Kirim</button>
+        </div>
     </div>
 
     <script>
+        function showBot(){
+            document.getElementById("chatbot-button").style.display = "hidden"
+            document.getElementById("chatbot-container").style.display = "block"
+        }
+
+        function exitBot(){
+            document.getElementById("chatbot-container").style.display = "none"
+            document.getElementById("chatbot-button").style.display = "block"
+        }
+
         function askQuestion() {
             const question = document.getElementById('question').value;
             fetch('http://127.0.0.1:5000/ask', {

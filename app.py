@@ -3,6 +3,7 @@ from flask_cors import CORS
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import difflib
+import re
 
 app = Flask(__name__)
 CORS(app)  # Ini akan mengizinkan semua asal (origins) untuk mengakses server ini
@@ -24,10 +25,17 @@ answers = list(faq.values())
 vectorizer = TfidfVectorizer().fit(questions)
 faq_vectors = vectorizer.transform(questions)
 
+def normalize_text(text):
+    # Lowercase the text and remove non-alphanumeric characters
+    text = text.lower()
+    text = re.sub(r'\W+', ' ', text)
+    return text
+
 def levenshtein_distance(str1, str2):
     return difflib.SequenceMatcher(None, str1, str2).ratio()
 
-def find_best_match(user_input, faq_list, threshold=0.5):
+def find_best_match(user_input, faq_list, threshold=0.4):
+    user_input = normalize_text(user_input)
     user_input_vector = vectorizer.transform([user_input])
     cosine_similarities = cosine_similarity(user_input_vector, faq_vectors)
     max_similarity = cosine_similarities.max()
@@ -35,20 +43,20 @@ def find_best_match(user_input, faq_list, threshold=0.5):
     if max_similarity >= threshold:
         best_match_index = cosine_similarities.argmax()
         best_match_question = questions[best_match_index]
-        
+
         # Apply Levenshtein distance as a secondary check
-        levenshtein_ratio = levenshtein_distance(user_input, best_match_question)
-        
+        levenshtein_ratio = levenshtein_distance(user_input, normalize_text(best_match_question))
+
         if levenshtein_ratio >= threshold:
             return best_match_question, levenshtein_ratio
-    
+
     return None, 0
 
 @app.route('/ask', methods=['POST'])
 def ask():
     data = request.json
     user_input = data['question']
-    best_match, ratio = find_best_match(user_input, list(faq.keys()), threshold=0.5)  # Set threshold to 0.5 or other suitable value
+    best_match, ratio = find_best_match(user_input, list(faq.keys()), threshold=0.4)  # Lower the threshold to 0.4
     if best_match:
         response = faq[best_match]
     else:
